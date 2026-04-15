@@ -1,0 +1,23 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+appsettings.Development.json
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+
+# Docker
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log

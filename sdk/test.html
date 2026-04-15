@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cookie Consent SDK — Test Page</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; }
+    h1 { color: #1a73e8; }
+    .card { background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #1a73e8; }
+    .card h3 { margin-top: 0; }
+    .status { font-family: monospace; font-size: 13px; background: #111; color: #0f0; padding: 12px; border-radius: 4px; white-space: pre-wrap; }
+    button { background: #1a73e8; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 4px; }
+    button.secondary { background: #f1f3f4; color: #333; }
+    .log-entry { font-size: 12px; color: #555; border-bottom: 1px solid #eee; padding: 4px 0; }
+  </style>
+</head>
+<body>
+
+  <h1>Cookie Consent SDK Test Page</h1>
+  <p>This page tests the <code>cookie-consent.js</code> SDK end-to-end. Open browser DevTools console for detailed logs.</p>
+
+  <!-- ═══════════════════════════════════════════════
+       BLOCKED SCRIPTS — these WILL NOT execute until
+       the user gives consent for their category.
+       ══════════════════════════════════════════════= -->
+
+  <!-- Analytics: blocked until analytics consent -->
+  <script type="text/plain" data-category="analytics">
+    console.log('%c[Analytics Script] ✓ Analytics script activated!', 'color: green; font-weight: bold');
+    window._analyticsLoaded = true;
+    document.getElementById('analytics-status').textContent = '✓ LOADED';
+    document.getElementById('analytics-status').style.color = 'green';
+  </script>
+
+  <!-- Marketing: blocked until marketing consent -->
+  <script type="text/plain" data-category="marketing">
+    console.log('%c[Marketing Script] ✓ Marketing script activated!', 'color: blue; font-weight: bold');
+    window._marketingLoaded = true;
+    document.getElementById('marketing-status').textContent = '✓ LOADED';
+    document.getElementById('marketing-status').style.color = 'blue';
+  </script>
+
+  <!-- Necessary: always active (should activate regardless) -->
+  <script type="text/plain" data-category="necessary">
+    console.log('%c[Necessary Script] ✓ Necessary script activated!', 'color: orange; font-weight: bold');
+    window._necessaryLoaded = true;
+    document.getElementById('necessary-status').textContent = '✓ LOADED';
+    document.getElementById('necessary-status').style.color = 'darkorange';
+  </script>
+
+  <!-- ══ Page content ══════════════════════════════════════════════════════════ -->
+
+  <div class="card">
+    <h3>Script Activation Status</h3>
+    <p>Analytics script: <strong id="analytics-status" style="color:red">✗ BLOCKED</strong></p>
+    <p>Marketing script: <strong id="marketing-status" style="color:red">✗ BLOCKED</strong></p>
+    <p>Necessary script: <strong id="necessary-status" style="color:red">✗ BLOCKED</strong></p>
+  </div>
+
+  <div class="card">
+    <h3>Stored Consent (localStorage)</h3>
+    <div id="stored-consent" class="status">None</div>
+    <button onclick="refreshConsentDisplay()">Refresh</button>
+    <button class="secondary" onclick="CookieConsent.reset()">Reset Consent (reload)</button>
+    <button class="secondary" onclick="CookieConsent.manage()">Open Cookie Settings</button>
+  </div>
+
+  <div class="card">
+    <h3>Test Instructions</h3>
+    <ol>
+      <li>Make sure the backend API is running on <code>http://localhost:5000</code></li>
+      <li>Register a user and create a website — copy its <code>apiKey</code></li>
+      <li>Replace <code>YOUR-API-KEY</code> in the script tag below with your actual key</li>
+      <li>Reload this page — the cookie banner should appear</li>
+      <li>Click <strong>Accept All</strong> → all 3 scripts above should turn green</li>
+      <li>Reload again → banner should NOT appear (consent stored), scripts activate immediately</li>
+      <li>Click <strong>Reset Consent</strong> to start over</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h3>Console Event Log</h3>
+    <div id="event-log"></div>
+  </div>
+
+  <!-- ══ SDK Script Tag ════════════════════════════════════════════════════════
+       Replace YOUR-API-KEY with the actual API key from the dashboard.
+       The script must NOT have async or defer attributes.
+       ════════════════════════════════════════════════════════════════════════ -->
+  <script src="cookie-consent.js"
+          data-api-key="YOUR-API-KEY"
+          data-api-url="http://localhost:5000">
+  </script>
+
+  <script>
+    // ── Test helper: display stored consent ──────────────────────────────────
+    function refreshConsentDisplay() {
+      var key = 'cc_consent_YOUR-API-KEY';
+      var raw = localStorage.getItem(key);
+      var el = document.getElementById('stored-consent');
+      if (raw) {
+        try { el.textContent = JSON.stringify(JSON.parse(raw), null, 2); }
+        catch(e) { el.textContent = raw; }
+      } else {
+        el.textContent = 'None';
+      }
+    }
+
+    // ── Auto-refresh display after a short delay ────────────────────────────
+    setTimeout(refreshConsentDisplay, 1000);
+    setTimeout(refreshConsentDisplay, 3000);
+
+    // ── Intercept console.log to show in page ───────────────────────────────
+    var origLog = console.log;
+    console.log = function() {
+      origLog.apply(console, arguments);
+      var msg = Array.from(arguments).filter(function(a){ return typeof a === 'string' && !a.startsWith('%c'); }).join(' ');
+      if (msg && msg.includes('[')) {
+        var el = document.getElementById('event-log');
+        var entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
+        el.insertBefore(entry, el.firstChild);
+      }
+    };
+  </script>
+
+</body>
+</html>
