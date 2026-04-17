@@ -8,5 +8,6 @@ public interface IWebsiteRepository
     Task<Website?> GetByApiKeyAsync(Guid apiKey);
     Task<IEnumerable<Website>> GetByUserIdAsync(string userId);
     Task<Website> AddAsync(Website website);
+    Task UpdateAsync(Website website);
     Task DeleteAsync(Website website);
 }

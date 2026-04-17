@@ -33,4 +33,13 @@ public class ConsentsController : ControllerBase
         var result = await _consentService.GetPagedAsync(websiteId, UserId, page, pageSize);
         return Ok(result);
     }
+
+    [HttpGet("export")]
+    public async Task<IActionResult> Export([FromQuery] Guid websiteId)
+    {
+        var csv = await _consentService.ExportCsvAsync(websiteId, UserId);
+        var fileName = $"consent-report-{websiteId:N}-{DateTime.UtcNow:yyyyMMdd}.csv";
+        var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
+        return File(bytes, "text/csv", fileName);
+    }
 }

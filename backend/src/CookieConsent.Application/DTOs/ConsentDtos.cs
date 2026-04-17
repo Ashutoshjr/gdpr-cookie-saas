@@ -28,6 +28,11 @@ public class ConfigResponse
     public int Version { get; set; } = 1;
     public string PrimaryColor { get; set; } = "#1a73e8";
     public string Position { get; set; } = "bottom"; // bottom | top
+    public string BannerTitle { get; set; } = "We use cookies";
+    public string BannerDescription { get; set; } = "We use cookies to improve your experience.";
+    public string Language { get; set; } = "en";
+    public bool GeoRestrictionEnabled { get; set; } = false;
+    public string PrivacyPolicyUrl { get; set; } = string.Empty;
     public List<ConfigCategoryDto> Categories { get; set; } = new();
 }
 

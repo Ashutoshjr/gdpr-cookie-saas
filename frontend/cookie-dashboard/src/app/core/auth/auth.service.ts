@@ -23,6 +23,24 @@ export interface RegisterRequest {
   password: string;
 }
 
+export interface UserProfile {
+  id: string;
+  fullName: string;
+  email: string;
+  createdAt: string;
+  plan: string;
+}
+
+export interface UsageSummary {
+  plan: string;
+  websitesUsed: number;
+  websitesLimit: number;       // -1 = unlimited
+  consentsThisMonth: number;
+  consentsLimit: number;       // -1 = unlimited
+  websiteLimitReached: boolean;
+  consentLimitReached: boolean;
+}
+
 const STORAGE_KEY = 'cc_auth_user';
 
 @Injectable({ providedIn: 'root' })
@@ -42,6 +60,46 @@ export class AuthService {
   register(request: RegisterRequest): Observable<AuthUser> {
     return this.http.post<AuthUser>(`${environment.apiUrl}/api/auth/register`, request).pipe(
       tap(user => this.setUser(user))
+    );
+  }
+
+  forgotPassword(email: string): Observable<{ message: string; resetToken: string }> {
+    return this.http.post<{ message: string; resetToken: string }>(
+      `${environment.apiUrl}/api/auth/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${environment.apiUrl}/api/auth/reset-password`, { token, newPassword });
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${environment.apiUrl}/api/auth/change-password`, { currentPassword, newPassword });
+  }
+
+  getProfile(): Observable<UserProfile> {
+    return this.http.get<UserProfile>(`${environment.apiUrl}/api/auth/profile`);
+  }
+
+  getUsageSummary(): Observable<UsageSummary> {
+    return this.http.get<UsageSummary>(`${environment.apiUrl}/api/auth/usage`);
+  }
+
+  upgradePlan(plan: string): Observable<UserProfile> {
+    return this.http.post<UserProfile>(`${environment.apiUrl}/api/auth/upgrade`, { plan });
+  }
+
+  deleteAccount(): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/api/auth/account`);
+  }
+
+  updateProfile(fullName: string, email: string): Observable<UserProfile> {
+    return this.http.put<UserProfile>(`${environment.apiUrl}/api/auth/profile`, { fullName, email }).pipe(
+      tap(profile => {
+        const user = this._user$.value;
+        if (user) this.setUser({ ...user, fullName: profile.fullName, email: profile.email });
+      })
     );
   }
 

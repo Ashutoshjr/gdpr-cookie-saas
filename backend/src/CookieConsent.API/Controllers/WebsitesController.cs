@@ -52,6 +52,37 @@ public class WebsitesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = website.Id }, website);
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<WebsiteDto>> UpdateInfo(Guid id, [FromBody] UpdateWebsiteInfoRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Domain))
+            return BadRequest(new { message = "Name and domain are required." });
+
+        var website = await _websiteService.UpdateInfoAsync(id, UserId, request);
+        return Ok(website);
+    }
+
+    [HttpPatch("{id:guid}/appearance")]
+    public async Task<ActionResult<WebsiteDto>> UpdateAppearance(Guid id, [FromBody] UpdateBannerAppearanceRequest request)
+    {
+        var website = await _websiteService.UpdateAppearanceAsync(id, UserId, request);
+        return Ok(website);
+    }
+
+    [HttpGet("{id:guid}/cookie-policy")]
+    public async Task<ActionResult<string>> GetCookiePolicy(Guid id)
+    {
+        var html = await _websiteService.GenerateCookiePolicyAsync(id, UserId);
+        return Ok(new { html });
+    }
+
+    [HttpPost("{id:guid}/regenerate-key")]
+    public async Task<ActionResult<WebsiteDto>> RegenerateKey(Guid id)
+    {
+        var website = await _websiteService.RegenerateApiKeyAsync(id, UserId);
+        return Ok(website);
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {

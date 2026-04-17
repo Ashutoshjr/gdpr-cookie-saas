@@ -67,6 +67,7 @@ import { AuthService } from '../../../core/auth/auth.service';
         </mat-card-content>
 
         <mat-card-actions>
+          <p class="auth-link"><a routerLink="/forgot-password">Forgot password?</a></p>
           <p class="auth-link">Don't have an account? <a routerLink="/register">Create one</a></p>
         </mat-card-actions>
       </mat-card>

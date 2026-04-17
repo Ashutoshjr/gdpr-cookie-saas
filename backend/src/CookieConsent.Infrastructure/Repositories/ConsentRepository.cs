@@ -34,6 +34,19 @@ public class ConsentRepository : IConsentRepository
         return (items, totalCount);
     }
 
+    public async Task<IEnumerable<Consent>> GetAllByWebsiteAsync(Guid websiteId)
+        => await _db.Consents
+            .AsNoTracking()
+            .Where(c => c.WebsiteId == websiteId)
+            .OrderByDescending(c => c.Timestamp)
+            .ToListAsync();
+
     public async Task<int> CountByWebsiteAsync(Guid websiteId)
         => await _db.Consents.CountAsync(c => c.WebsiteId == websiteId);
+
+    public async Task<int> CountThisMonthByUserAsync(string userId, DateTime monthStart)
+        => await _db.Consents
+            .AsNoTracking()
+            .Where(c => c.Website.UserId == userId && c.Timestamp >= monthStart)
+            .CountAsync();
 }

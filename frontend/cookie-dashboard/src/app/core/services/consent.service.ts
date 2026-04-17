@@ -16,4 +16,9 @@ export class ConsentService {
       .set('pageSize', pageSize);
     return this.http.get<PagedResult<ConsentModel>>(this.base, { params });
   }
+
+  exportCsv(websiteId: string): Observable<Blob> {
+    const params = new HttpParams().set('websiteId', websiteId);
+    return this.http.get(`${this.base}/export`, { params, responseType: 'blob' });
+  }
 }

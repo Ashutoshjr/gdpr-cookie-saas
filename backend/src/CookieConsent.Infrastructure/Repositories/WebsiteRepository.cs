@@ -37,6 +37,25 @@ public class WebsiteRepository : IWebsiteRepository
         return website;
     }
 
+    public async Task UpdateAsync(Website website)
+    {
+        var tracked = await _db.Websites.FindAsync(website.Id);
+        if (tracked != null)
+        {
+            tracked.PrimaryColor = website.PrimaryColor;
+            tracked.BannerTitle = website.BannerTitle;
+            tracked.BannerDescription = website.BannerDescription;
+            tracked.BannerPosition = website.BannerPosition;
+            tracked.Language = website.Language;
+            tracked.GeoRestrictionEnabled = website.GeoRestrictionEnabled;
+            tracked.PrivacyPolicyUrl = website.PrivacyPolicyUrl;
+            tracked.Name = website.Name;
+            tracked.Domain = website.Domain;
+            tracked.ApiKey = website.ApiKey;
+            await _db.SaveChangesAsync();
+        }
+    }
+
     public async Task DeleteAsync(Website website)
     {
         var tracked = await _db.Websites.FindAsync(website.Id);

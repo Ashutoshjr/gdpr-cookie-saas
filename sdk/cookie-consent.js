@@ -56,7 +56,50 @@
       });
   }
 
-  // ── 3. Init ─────────────────────────────────────────────────────────────────
+  // ── 3. Translations ─────────────────────────────────────────────────────────
+  var TRANSLATIONS = {
+    en: { acceptAll: 'Accept All', rejectAll: 'Reject All', customize: 'Customize',
+          savePreferences: 'Save Preferences', required: 'Always required',
+          modalTitle: 'Cookie Preferences', manage: '🍪 Manage Cookies' },
+    de: { acceptAll: 'Alle akzeptieren', rejectAll: 'Alle ablehnen', customize: 'Anpassen',
+          savePreferences: 'Einstellungen speichern', required: 'Immer erforderlich',
+          modalTitle: 'Cookie-Einstellungen', manage: '🍪 Cookies verwalten' },
+    fr: { acceptAll: 'Tout accepter', rejectAll: 'Tout refuser', customize: 'Personnaliser',
+          savePreferences: 'Enregistrer', required: 'Toujours requis',
+          modalTitle: 'Préférences cookies', manage: '🍪 Gérer les cookies' },
+    es: { acceptAll: 'Aceptar todo', rejectAll: 'Rechazar todo', customize: 'Personalizar',
+          savePreferences: 'Guardar preferencias', required: 'Siempre requerido',
+          modalTitle: 'Preferencias de cookies', manage: '🍪 Gestionar cookies' },
+    it: { acceptAll: 'Accetta tutto', rejectAll: 'Rifiuta tutto', customize: 'Personalizza',
+          savePreferences: 'Salva preferenze', required: 'Sempre richiesto',
+          modalTitle: 'Preferenze cookie', manage: '🍪 Gestisci cookie' },
+    pt: { acceptAll: 'Aceitar tudo', rejectAll: 'Rejeitar tudo', customize: 'Personalizar',
+          savePreferences: 'Guardar preferências', required: 'Sempre necessário',
+          modalTitle: 'Preferências de cookies', manage: '🍪 Gerir cookies' },
+    nl: { acceptAll: 'Alles accepteren', rejectAll: 'Alles weigeren', customize: 'Aanpassen',
+          savePreferences: 'Voorkeuren opslaan', required: 'Altijd vereist',
+          modalTitle: 'Cookie-voorkeuren', manage: '🍪 Cookies beheren' },
+    pl: { acceptAll: 'Zaakceptuj wszystkie', rejectAll: 'Odrzuć wszystkie', customize: 'Dostosuj',
+          savePreferences: 'Zapisz preferencje', required: 'Zawsze wymagane',
+          modalTitle: 'Preferencje plików cookie', manage: '🍪 Zarządzaj plikami cookie' }
+  };
+
+  function t(config, key) {
+    var lang = (config && config.language) || 'en';
+    var dict = TRANSLATIONS[lang] || TRANSLATIONS['en'];
+    return dict[key] || TRANSLATIONS['en'][key] || key;
+  }
+
+  // ── 4. EU Country List ───────────────────────────────────────────────────────
+  var EU_COUNTRIES = [
+    'AT','BE','BG','CY','CZ','DE','DK','EE','ES','FI','FR','GR','HR',
+    'HU','IE','IT','LT','LU','LV','MT','NL','PL','PT','RO','SE','SI',
+    'SK', // EU member states
+    'IS','LI','NO', // EEA
+    'GB','CH' // UK/CH — GDPR still applies
+  ];
+
+  // ── 5. Init ─────────────────────────────────────────────────────────────────
   function init(config) {
     var stored = getStoredConsent();
 
@@ -67,9 +110,39 @@
       return;
     }
 
-    // Show the banner
-    injectStyles(config);
-    renderBanner(config);
+    // Geolocation check: if enabled, only show banner to EU/EEA visitors
+    if (config.geoRestrictionEnabled) {
+      checkIfEuVisitor(function (isEu) {
+        if (isEu) {
+          injectStyles(config);
+          renderBanner(config);
+        }
+        // Non-EU visitor: activate all scripts silently, no banner
+        else {
+          var allCategories = {};
+          (config.categories || []).forEach(function (c) { allCategories[c.name] = true; });
+          activateScripts(allCategories);
+        }
+      });
+    } else {
+      injectStyles(config);
+      renderBanner(config);
+    }
+  }
+
+  function checkIfEuVisitor(callback) {
+    fetch('http://ip-api.com/json/?fields=countryCode')
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        callback(EU_COUNTRIES.indexOf(data.countryCode) !== -1);
+      })
+      .catch(function () {
+        // Fail-open: if geo check fails, show the banner to be safe
+        callback(true);
+      });
   }
 
   // ── 4. Script Blocking Engine ───────────────────────────────────────────────
@@ -224,14 +297,31 @@
 
     var text = document.createElement('p');
     text.id = 'cc-banner-text';
-    text.textContent = 'We use cookies to improve your experience on our site. You can accept all, reject optional cookies, or customize your preferences.';
+    var title = (config && config.bannerTitle) ? config.bannerTitle : 'We use cookies';
+    var desc = (config && config.bannerDescription) ? config.bannerDescription : 'We use cookies to improve your experience on our site.';
+    var strong = document.createElement('strong');
+    strong.textContent = title + ' ';
+    text.appendChild(strong);
+    text.appendChild(document.createTextNode(desc));
+
+    // Privacy Policy link
+    if (config && config.privacyPolicyUrl) {
+      text.appendChild(document.createTextNode(' '));
+      var ppLink = document.createElement('a');
+      ppLink.href = config.privacyPolicyUrl;
+      ppLink.target = '_blank';
+      ppLink.rel = 'noopener noreferrer';
+      ppLink.textContent = 'Privacy Policy';
+      text.appendChild(ppLink);
+      text.appendChild(document.createTextNode('.'));
+    }
 
     var actions = document.createElement('div');
     actions.id = 'cc-banner-actions';
 
-    var acceptBtn = makeButton('cc-accept-all', 'Accept All', 'cc-btn');
-    var rejectBtn = makeButton('cc-reject-all', 'Reject All', 'cc-btn');
-    var customizeBtn = makeButton('cc-customize', 'Customize', 'cc-btn');
+    var acceptBtn = makeButton('cc-accept-all', t(config, 'acceptAll'), 'cc-btn');
+    var rejectBtn = makeButton('cc-reject-all', t(config, 'rejectAll'), 'cc-btn');
+    var customizeBtn = makeButton('cc-customize', t(config, 'customize'), 'cc-btn');
 
     acceptBtn.addEventListener('click', function () { acceptAll(config); });
     rejectBtn.addEventListener('click', function () { rejectAll(config); });
@@ -274,11 +364,11 @@
     modal.setAttribute('aria-label', 'Cookie preferences');
 
     var title = document.createElement('h2');
-    title.textContent = 'Cookie Preferences';
+    title.textContent = t(config, 'modalTitle');
 
     var desc = document.createElement('p');
     desc.className = 'cc-modal-desc';
-    desc.textContent = 'Choose which cookies you allow. Required cookies cannot be disabled.';
+    desc.textContent = t(config, 'modalDesc') || 'Choose which cookies you allow. Required cookies cannot be disabled.';
 
     modal.appendChild(title);
     modal.appendChild(desc);
@@ -309,7 +399,7 @@
       if (cat.isRequired) {
         var badge = document.createElement('div');
         badge.className = 'cc-required-badge';
-        badge.textContent = 'Always active';
+        badge.textContent = t(config, 'required');
         info.appendChild(badge);
       }
 
@@ -339,11 +429,11 @@
     var modalActions = document.createElement('div');
     modalActions.id = 'cc-modal-actions';
 
-    var saveBtn = makeButton('cc-save-prefs', 'Save Preferences', 'cc-btn');
+    var saveBtn = makeButton('cc-save-prefs', t(config, 'savePreferences'), 'cc-btn');
     saveBtn.style.cssText = 'background:' + ((config && config.primaryColor) || '#1a73e8') + ';color:#fff;';
     saveBtn.addEventListener('click', function () { saveCustom(config, modal); });
 
-    var acceptAllBtn = makeButton('cc-modal-accept-all', 'Accept All', 'cc-btn');
+    var acceptAllBtn = makeButton('cc-modal-accept-all', t(config, 'acceptAll'), 'cc-btn');
     acceptAllBtn.style.cssText = 'background:#f1f3f4;color:#333;';
     acceptAllBtn.addEventListener('click', function () { acceptAll(config); closeModal(); });
 
@@ -446,7 +536,7 @@
 
     var btn = document.createElement('button');
     btn.id = 'cc-manage-btn';
-    btn.textContent = 'Cookie Settings';
+    btn.textContent = t(config, 'manage');
     btn.setAttribute('aria-label', 'Manage cookie preferences');
 
     btn.addEventListener('click', function () {

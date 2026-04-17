@@ -37,8 +37,13 @@ public class ConfigService : IConfigService
             WebsiteName = website.Name,
             Domain = website.Domain,
             Version = 1,
-            PrimaryColor = "#1a73e8",
-            Position = "bottom",
+            PrimaryColor = website.PrimaryColor,
+            Position = website.BannerPosition,
+            BannerTitle = website.BannerTitle,
+            BannerDescription = website.BannerDescription,
+            Language = website.Language,
+            GeoRestrictionEnabled = website.GeoRestrictionEnabled,
+            PrivacyPolicyUrl = website.PrivacyPolicyUrl,
             Categories = categories.Select(c => new ConfigCategoryDto
             {
                 Name = c.Name,

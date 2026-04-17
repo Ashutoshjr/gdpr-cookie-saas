@@ -35,9 +35,17 @@ import { AuthService } from '../../core/auth/auth.service';
             <mat-icon matListItemIcon>language</mat-icon>
             <span matListItemTitle>Websites</span>
           </a>
+          <a mat-list-item routerLink="/analytics" routerLinkActive="active-link">
+            <mat-icon matListItemIcon>bar_chart</mat-icon>
+            <span matListItemTitle>Analytics</span>
+          </a>
           <a mat-list-item routerLink="/consents" routerLinkActive="active-link">
             <mat-icon matListItemIcon>fact_check</mat-icon>
             <span matListItemTitle>Consent Logs</span>
+          </a>
+          <a mat-list-item routerLink="/profile" routerLinkActive="active-link">
+            <mat-icon matListItemIcon>account_circle</mat-icon>
+            <span matListItemTitle>My Profile</span>
           </a>
         </mat-nav-list>
         <div class="sidenav-footer">

@@ -8,5 +8,11 @@ public class User
     public string FullName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetTokenExpiry { get; set; }
+
+    // Plan: "free" | "pro"
+    public string Plan { get; set; } = "free";
+
     public ICollection<Website> Websites { get; set; } = new List<Website>();
 }

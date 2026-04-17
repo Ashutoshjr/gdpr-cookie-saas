@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -21,19 +22,27 @@ import { WebsiteModel } from '../../shared/models/website.model';
   imports: [
     CommonModule, DatePipe, FormsModule,
     MatTableModule, MatSelectModule, MatFormFieldModule, MatPaginatorModule,
-    MatCardModule, MatIconModule, MatProgressSpinnerModule, MatChipsModule, MatTooltipModule
+    MatCardModule, MatIconModule, MatButtonModule, MatProgressSpinnerModule, MatChipsModule, MatTooltipModule
   ],
   template: `
     <div class="page-header">
       <h2>Consent Logs</h2>
-      <mat-form-field appearance="outline" class="website-select">
-        <mat-label>Filter by Website</mat-label>
-        <mat-select [(ngModel)]="selectedWebsiteId" (ngModelChange)="onWebsiteChange()">
-          @for (w of websites(); track w.id) {
-            <mat-option [value]="w.id">{{ w.name }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <div class="header-actions">
+        <mat-form-field appearance="outline" class="website-select">
+          <mat-label>Filter by Website</mat-label>
+          <mat-select [(ngModel)]="selectedWebsiteId" (ngModelChange)="onWebsiteChange()">
+            @for (w of websites(); track w.id) {
+              <mat-option [value]="w.id">{{ w.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        @if (selectedWebsiteId && totalCount() > 0) {
+          <button mat-stroked-button color="primary" (click)="exportCsv()" [disabled]="exporting()">
+            <mat-icon>download</mat-icon>
+            {{ exporting() ? 'Exporting…' : 'Export CSV' }}
+          </button>
+        }
+      </div>
     </div>
 
     @if (loadingWebsites()) {
@@ -114,7 +123,9 @@ import { WebsiteModel } from '../../shared/models/website.model';
   styles: [`
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
     .page-header h2 { margin: 0; font-size: 24px; color: #1e293b; }
-    .website-select { min-width: 240px; }
+    .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .website-select { min-width: 240px; margin-bottom: 0; }
+    .header-actions button mat-icon { margin-right: 6px; font-size: 18px; height: 18px; width: 18px; }
     .loading-center { display: flex; justify-content: center; padding: 60px; }
     .full-width { width: 100%; }
     .categories-text { font-size: 12px; color: #475569; max-width: 200px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
@@ -131,6 +142,7 @@ export class ConsentListComponent implements OnInit {
 
   loadingWebsites = signal(true);
   loading = signal(false);
+  exporting = signal(false);
   websites = signal<WebsiteModel[]>([]);
   consents = signal<ConsentModel[]>([]);
   totalCount = signal(0);
@@ -175,6 +187,24 @@ export class ConsentListComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
+    });
+  }
+
+  exportCsv() {
+    if (!this.selectedWebsiteId) return;
+    this.exporting.set(true);
+    const websiteName = this.websites().find(w => w.id === this.selectedWebsiteId)?.name ?? 'consent';
+    this.consentService.exportCsv(this.selectedWebsiteId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${websiteName.toLowerCase().replace(/\s+/g, '-')}-consent-report-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: () => this.exporting.set(false)
     });
   }
 

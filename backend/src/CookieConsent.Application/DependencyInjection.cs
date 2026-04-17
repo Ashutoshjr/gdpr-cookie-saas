@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddScoped<IWebsiteService, WebsiteService>();
         services.AddScoped<IConsentService, ConsentService>();
         services.AddScoped<IConfigService, ConfigService>();
+        services.AddScoped<IAnalyticsService, AnalyticsService>();
 
         services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
